@@ -427,12 +427,12 @@ class Denario:
 
     def get_results(self,
                     involved_agents: List[str] = ['engineer', 'researcher'],
-                    engineer_model: LLM | str = models["claude-3.7-sonnet"],
+                    engineer_model: LLM | str = models["gpt-4.1"],
                     researcher_model: LLM | str = models["o3-mini"],
                     restart_at_step: int = -1,
                     hardware_constraints: str = None,
                     planner_model: LLM | str = models["gpt-4o"],
-                    plan_reviewer_model: LLM | str = models["claude-3.7-sonnet"],
+                    plan_reviewer_model: LLM | str = models["o3-mini"],
                     max_n_attempts: int = 10,
                     max_n_steps: int = 6,   
                     ) -> None:
