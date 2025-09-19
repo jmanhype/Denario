@@ -22,6 +22,7 @@ from .experiment import Experiment
 from .paper_agents.agents_graph import build_graph
 from .utils import llm_parser, input_check
 from .langgraph_agents.agents_graph import build_lg_graph
+from cmbagent import preprocess_task
 
 
 # TODO: unify display and print by new method
@@ -114,6 +115,59 @@ class Denario:
         # overwrite the data_description.md file
         with open(os.path.join(self.project_dir, INPUT_FILES, DESCRIPTION_FILE), 'w') as f:
             f.write(data_description)
+        
+    def enhance_data_description(self, data_description: str = None, 
+                                summarizer_model: str = None, 
+                                summarizer_response_formatter_model: str = None) -> None:
+
+        # Check if data description exists
+        if not hasattr(self.research, 'data_description') or not self.research.data_description:
+            # Try to load from file if it exists
+            try:
+                with open(os.path.join(self.project_dir, INPUT_FILES, DESCRIPTION_FILE), 'r') as f:
+                    self.research.data_description = f.read()
+            except FileNotFoundError:
+                raise ValueError("No data description found. Please set a data description first before enhancing it.")
+
+        # Prepare parameters for preprocess_task
+        preprocess_params = {"work_dir": self.project_dir}
+        
+        if summarizer_model:
+            preprocess_params["summarizer_model"] = summarizer_model
+        if summarizer_response_formatter_model:
+            preprocess_params["summarizer_response_formatter_model"] = summarizer_response_formatter_model
+
+        # Get the enhanced text from preprocess_task
+        enhanced_text = preprocess_task(self.research.data_description, **preprocess_params)
+        
+        # Debug: Check if the enhanced text is different from original
+        print(f"Original text length: {len(self.research.data_description)}")
+        print(f"Enhanced text length: {len(enhanced_text)}")
+        print(f"Texts are different: {self.research.data_description != enhanced_text}")
+        
+        # If the enhanced text is the same as original, try reading from enhanced_input.md
+        if self.research.data_description == enhanced_text:
+            enhanced_input_path = os.path.join(self.project_dir, "enhanced_input.md")
+            if os.path.exists(enhanced_input_path):
+                print("Reading enhanced content from enhanced_input.md")
+                with open(enhanced_input_path, 'r', encoding='utf-8') as f:
+                    enhanced_text = f.read()
+                print(f"Enhanced text from file length: {len(enhanced_text)}")
+        
+        # Update the research object with enhanced text
+        self.research.data_description = enhanced_text
+
+        # Create the input_files directory if it doesn't exist
+        input_files_dir = os.path.join(self.project_dir, INPUT_FILES)
+        if not os.path.exists(input_files_dir):
+            os.makedirs(input_files_dir, exist_ok=True)
+
+        # Write the enhanced text to data_description.md
+        with open(os.path.join(input_files_dir, DESCRIPTION_FILE), 'w', encoding='utf-8') as f:
+            f.write(enhanced_text)
+            
+        print(f"Enhanced text written to: {os.path.join(input_files_dir, DESCRIPTION_FILE)}")
+
 
     def show_data_description(self) -> None:
         """Show the data description set by the `set_data_description` method."""
