@@ -18,7 +18,7 @@ class Method:
                  keys: KeyManager,
                  researcher_model = "gpt-4.1-2025-04-14",
                  planner_model = "gpt-4.1-2025-04-14",
-                 plan_reviewer_model = "claude-3.7-sonnet",
+                 plan_reviewer_model = "o3-mini",
                  work_dir = None,
                  default_orchestration_model = "gpt-4.1",
                  default_formatter_model = "o3-mini",
