@@ -41,7 +41,8 @@ class Denario:
         clear_project_dir: Clear all files in project directory when initializing if `True`.
     """
 
-    def __init__(self, input_data: Research | None = None,
+    def __init__(self,
+                 input_data: Research | None = None,
                  params={}, 
                  project_dir: str | None = None, 
                  clear_project_dir: bool = False,
@@ -72,7 +73,6 @@ class Denario:
         # Get keys from environment if they exist
         self.keys = KeyManager()
         self.keys.get_keys_from_env()
-
 
     def _setup_input_files(self) -> None:
         input_files_dir = os.path.join(self.project_dir, INPUT_FILES)
@@ -116,9 +116,16 @@ class Denario:
         with open(os.path.join(self.project_dir, INPUT_FILES, DESCRIPTION_FILE), 'w') as f:
             f.write(data_description)
         
-    def enhance_data_description(self, data_description: str = None, 
-                                summarizer_model: str = None, 
-                                summarizer_response_formatter_model: str = None) -> None:
+    def enhance_data_description(self,
+                                 summarizer_model: str = None, 
+                                 summarizer_response_formatter_model: str = None) -> None:
+        """
+        Enhance the data description using the preprocess_task from cmbagent.
+
+        Args:
+            summarizer_model: LLM to be used for summarization.
+            summarizer_response_formatter_model: LLM to be used for formatting the summarization response.
+        """
 
         # Check if data description exists
         if not hasattr(self.research, 'data_description') or not self.research.data_description:
@@ -167,7 +174,6 @@ class Denario:
             f.write(enhanced_text)
             
         print(f"Enhanced text written to: {os.path.join(input_files_dir, DESCRIPTION_FILE)}")
-
 
     def show_data_description(self) -> None:
         """Show the data description set by the `set_data_description` method."""
@@ -225,6 +231,8 @@ class Denario:
             idea_hater_model: the LLM to be used for the idea hater agent.
             planner_model: the LLM to be used for the planner agent.
             plan_reviewer_model: the LLM to be used for the plan reviewer agent.
+            default_orchestration_model: the LLM to be used for the orchestration of the agents.
+            default_formatter_model: the LLM to be used for formatting the responses of the agents.
         """
 
         # Get LLM instances
@@ -341,17 +349,13 @@ class Denario:
         """
 
         if mode == 'futurehouse':
-            return self.check_idea_futurhouse(llm=llm, max_iterations=max_iterations, verbose=verbose)
+            return self.check_idea_futurhouse()
 
         elif mode == 'semantic_scholar':
 
             return self.check_idea_fast(llm=llm, max_iterations=max_iterations, verbose=verbose)
     
-    def check_idea_futurhouse(self,
-                                llm: LLM | str = models["gemini-2.5-flash"],
-                                max_iterations: int = 7,
-                                verbose=False,
-                                ) -> str:
+    def check_idea_futurhouse(self) -> str:
         """
         Check with the literature if an idea is original or not.
 
@@ -366,7 +370,6 @@ class Denario:
         )
         import os
         fhkey = os.getenv("FUTURE_HOUSE_API_KEY")
-
 
         fh_client = FutureHouseClient(
             api_key=fhkey,
@@ -469,19 +472,55 @@ class Denario:
             return "Literature file not found"
         
     def get_method(self,
-                 method_generator_model: LLM | str = models["gpt-4o"],
-                 planner_model: LLM | str = models["gpt-4o"],
-                 plan_reviewer_model: LLM | str = models["o3-mini"],
-                 default_orchestration_model: LLM | str = models["gpt-4.1"],
-                 default_formatter_model: LLM | str = models["o3-mini"],
-                ) -> None:
+                   mode = "fast",
+                   llm_fast: LLM | str = models["gemini-2.0-flash"],
+                   method_generator_model: LLM | str = models["gpt-4o"],
+                   planner_model: LLM | str = models["gpt-4o"],
+                   plan_reviewer_model: LLM | str = models["o3-mini"],
+                   default_orchestration_model: LLM | str = models["gpt-4.1"],
+                   default_formatter_model: LLM | str = models["o3-mini"],
+                   verbose = False,
+                   ) -> None:
         """
         Generate the methods to be employed making use of the data and tools described in `data_description.md` and the idea in `idea.md`.
         
         Args:
-           method_generator_model: (researcher) the LLM model to be used for the researcher agent. Default is gpt-4o
-           planner_model: the LLM model to be used for the planner agent. Default is gpt-4o
-           plan_reviewer_model: the LLM model to be used for the plan reviewer agent. Default is o3-mini
+            mode: either "fast" or "cmbagent". Fast mode uses langgraph backend and is faster but less reliable. Cmbagent mode uses cmbagent backend and is slower but more reliable.
+            llm_fast: the LLM to be used for the fast mode.
+            method_generator_model: (researcher) the LLM model to be used for the researcher agent. Default is gpt-4o
+            planner_model: the LLM model to be used for the planner agent. Default is gpt-4o
+            plan_reviewer_model: the LLM model to be used for the plan reviewer agent. Default is o3-mini
+            default_orchestration_model: the LLM to be used for the orchestration of the agents.
+            default_formatter_model: the LLM to be used for formatting the responses of the agents.
+        """
+
+        if mode == "fast":
+            self.get_method_fast(llm=llm_fast, verbose=verbose)
+        elif mode == "cmbagent":
+            self.get_method_cmbagent(method_generator_model=method_generator_model,
+                                     planner_model=planner_model,
+                                     plan_reviewer_model=plan_reviewer_model,
+                                     default_orchestration_model=default_orchestration_model,
+                                     default_formatter_model=default_formatter_model)
+        else:
+            raise ValueError("Mode must be either 'fast' or 'cmbagent'")
+
+    def get_method_cmbagent(self,
+                            method_generator_model: LLM | str = models["gpt-4o"],
+                            planner_model: LLM | str = models["gpt-4o"],
+                            plan_reviewer_model: LLM | str = models["o3-mini"],
+                            default_orchestration_model: LLM | str = models["gpt-4.1"],
+                            default_formatter_model: LLM | str = models["o3-mini"],
+                            ) -> None:
+        """
+        Generate the methods to be employed making use of the data and tools described in `data_description.md` and the idea in `idea.md`.
+        
+        Args:
+            method_generator_model: (researcher) the LLM model to be used for the researcher agent. Default is gpt-4o
+            planner_model: the LLM model to be used for the planner agent. Default is gpt-4o
+            plan_reviewer_model: the LLM model to be used for the plan reviewer agent. Default is o3-mini
+            default_orchestration_model: the LLM to be used for the orchestration of the agents.
+            default_formatter_model: the LLM to be used for formatting the responses of the agents.
         """
 
         if self.research.data_description == "":
