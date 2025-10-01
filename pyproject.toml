@@ -16,11 +16,6 @@ requires-python = ">=3.12"
 license = { text = "GPLv3" }
 keywords = ["machine learning","agent", "biology", "chemistry", "cosmology","material sciences"]
 dependencies = [
-  "langchain>=0.3.23",
-  "langchain-chroma>=0.2.2",
-  "langchain-community>=0.3.21",
-  "langchain-google-vertexai>=2.0.19",
-  "langchain-groq>=0.3.2",
   "langchain-google-genai",
   "langchain-anthropic>=0.3.10",
   "langchain-openai>=0.3.12",
