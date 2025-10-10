@@ -187,12 +187,12 @@ class Denario:
     def get_idea(self,
                  mode = "fast",
                  llm_fast: LLM | str = models["gemini-2.0-flash"],
-                 idea_maker_model: LLM | str = models["gpt-4o"],
-                 idea_hater_model: LLM | str = models["o3-mini"],
-                 planner_model: LLM | str = models["gpt-4o"],
-                 plan_reviewer_model: LLM | str = models["o3-mini"],
-                 default_orchestration_model: LLM | str = models["gpt-4.1"],
-                 default_formatter_model: LLM | str = models["o3-mini"],
+                 idea_maker_model: LLM | str = models["gpt-4.1-mini"],
+                 idea_hater_model: LLM | str = models["gpt-4.1-mini"],
+                 planner_model: LLM | str = models["gpt-4.1-mini"],
+                 plan_reviewer_model: LLM | str = models["gpt-4.1-mini"],
+                 default_orchestration_model: LLM | str = models["gpt-4.1-mini"],
+                 default_formatter_model: LLM | str = models["gpt-4.1-mini"],
                 ) -> None:
         """Generate an idea making use of the data and tools described in `data_description.md`.
 
@@ -497,9 +497,9 @@ class Denario:
         Args:
             mode: either "fast" or "cmbagent". Fast mode uses langgraph backend and is faster but less reliable. Cmbagent mode uses cmbagent backend and is slower but more reliable.
             llm_fast: the LLM to be used for the fast mode.
-            method_generator_model: (researcher) the LLM model to be used for the researcher agent. Default is gpt-4o
-            planner_model: the LLM model to be used for the planner agent. Default is gpt-4o
-            plan_reviewer_model: the LLM model to be used for the plan reviewer agent. Default is o3-mini
+            method_generator_model: (researcher) the LLM model to be used for the researcher agent. Default is gpt-4.1-mini
+            planner_model: the LLM model to be used for the planner agent. Default is gpt-4.1-mini
+            plan_reviewer_model: the LLM model to be used for the plan reviewer agent. Default is gpt-4.1-mini
             default_orchestration_model: the LLM to be used for the orchestration of the agents.
             default_formatter_model: the LLM to be used for formatting the responses of the agents.
         """
@@ -631,28 +631,30 @@ class Denario:
 
     def get_results(self,
                     involved_agents: List[str] = ['engineer', 'researcher'],
-                    engineer_model: LLM | str = models["gpt-4.1"],
-                    researcher_model: LLM | str = models["o3-mini"],
+                    engineer_model: LLM | str = models["gpt-4.1-mini"],
+                    researcher_model: LLM | str = models["gpt-4.1-mini"],
                     restart_at_step: int = -1,
                     hardware_constraints: str = None,
-                    planner_model: LLM | str = models["gpt-4o"],
-                    plan_reviewer_model: LLM | str = models["o3-mini"],
+                    planner_model: LLM | str = models["gpt-4.1-mini"],
+                    plan_reviewer_model: LLM | str = models["gpt-4.1-mini"],
                     max_n_attempts: int = 10,
                     max_n_steps: int = 6,   
-                    default_orchestration_model: LLM | str = models["gpt-4.1"],
-                    default_formatter_model: LLM | str = models["o3-mini"],
+                    default_orchestration_model: LLM | str = models["gpt-4.1-mini"],
+                    default_formatter_model: LLM | str = models["gpt-4.1-mini"],
                     ) -> None:
         """
         Compute the results making use of the methods, idea and data description.
 
         Args:
             involved_agents: List of agents employed to compute the results.
-            engineer_model: the LLM model to be used for the engineer agent. Default is o3-mini
-            researcher_model: the LLM model to be used for the researcher agent. Default is o3-mini
+            engineer_model: the LLM model to be used for the engineer agent. Default is gpt-4.1-mini
+            researcher_model: the LLM model to be used for the researcher agent. Default is gpt-4.1-mini
             restart_at_step: the step to restart the experiment. Default is -1
             hardware_constraints: the hardware constraints to be used for the experiment. Default is None
-            planner_model: the LLM model to be used for the planner agent. Default is gpt-4o
-            plan_reviewer_model: the LLM model to be used for the plan reviewer agent. Default is o3-mini
+            planner_model: the LLM model to be used for the planner agent. Default is gpt-4.1-mini
+            plan_reviewer_model: the LLM model to be used for the plan reviewer agent. Default is gpt-4.1-mini
+            default_orchestration_model: the LLM model to be used for the orchestration of the agents. Default is gpt-4.1-mini
+            default_formatter_model: the LLM model to be used for the formatting of the responses of the agents. Default is gpt-4.1-mini
             max_n_attempts: the maximum number of attempts to execute code within one step if the code execution fails. Default is 10
             max_n_steps: the maximum number of steps in the workflow. Default is 6
         """
@@ -662,6 +664,8 @@ class Denario:
         researcher_model = llm_parser(researcher_model)
         planner_model = llm_parser(planner_model)
         plan_reviewer_model = llm_parser(plan_reviewer_model)
+        default_orchestration_model = llm_parser(default_orchestration_model)
+        default_formatter_model = llm_parser(default_formatter_model)
 
         if self.research.data_description == "":
             with open(os.path.join(self.project_dir, INPUT_FILES, DESCRIPTION_FILE), 'r') as f:
