@@ -1,6 +1,6 @@
 [project]
 name = "denario"
-version = "0.1.22"
+version = "0.1.23"
 description = "Modular Automation of Scientific Research with Multi-Agent Systems"
 authors = [
   { name = "Pablo Villanueva-Domingo" },
