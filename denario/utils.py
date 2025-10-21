@@ -1,7 +1,9 @@
-from .llm import LLM, models
 import os
 import re
 from pathlib import Path
+import warnings
+
+from .llm import LLM, models
 
 def input_check(str_input: str) -> str:
     """Check if the input is a string with the desired content or the path markdown file, in which case reads it to get the content."""
@@ -55,6 +57,24 @@ def extract_file_paths(markdown_text):
             missing_paths.append(path)
     
     return existing_paths, missing_paths
+
+def check_file_paths(content: str) -> None:
+    """Check that file paths indicated in content text have the proper format"""
+
+    existing_paths, missing_paths = extract_file_paths(content)
+
+    if len(missing_paths) > 0:
+        warnings.warn(
+            f"The following data files paths in the data description are not in the right format or do not exist:\n"
+            f"{missing_paths}\n"
+            f"Please fix them according to the convention '- /absolute/path/to/file.ext'\n"
+            f"otherwise this may cause hallucinations in the LLMs."
+        )
+
+    if len(existing_paths) == 0:
+        warnings.warn(
+            "No data files paths were found in the data description. If you want to provide input data, ensure that you indicate their path, otherwise this may cause hallucinations in the LLM in the get_results() workflow later on."
+        )
 
 def create_work_dir(work_dir: str | Path, name: str) -> Path:
     """Create working directory"""

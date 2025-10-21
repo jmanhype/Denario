@@ -5,7 +5,6 @@ import os
 import shutil
 from pathlib import Path
 from PIL import Image 
-import warnings
 
 os.environ["CMBAGENT_DEBUG"] = "false"
 
@@ -20,7 +19,7 @@ from .idea import Idea
 from .method import Method
 from .experiment import Experiment
 from .paper_agents.agents_graph import build_graph
-from .utils import llm_parser, input_check, extract_file_paths, in_notebook
+from .utils import llm_parser, input_check, check_file_paths, in_notebook
 from .langgraph_agents.agents_graph import build_lg_graph
 from cmbagent import preprocess_task
 
@@ -82,6 +81,10 @@ class Denario:
         # Create fresh input_files directory
         os.makedirs(input_files_dir, exist_ok=True)
 
+    #---
+    # Setters
+    #---
+
     def setter(self, field: str | None, file: str) -> str:
         """Base method for setting the content of idea, method or results."""
 
@@ -109,20 +112,90 @@ class Denario:
 
         self.research.data_description = self.setter(data_description, DESCRIPTION_FILE)
 
-        existing_paths, missing_paths = extract_file_paths(self.research.data_description)
-        if len(missing_paths) > 0:
-            warnings.warn(
-                f"The following data files paths in the data description are not in the right format or do not exist:\n"
-                f"{missing_paths}\n"
-                f"Please fix them according to the convention '- /absolute/path/to/file.ext'\n"
-                f"otherwise this may cause hallucinations in the LLMs."
-            )
+        check_file_paths(self.research.data_description)
+
+    def set_idea(self, idea: str | None = None) -> None:
+        """Manually set an idea, either directly from a string or providing the path of a markdown file with the idea."""
+
+        self.research.idea = self.setter(idea, IDEA_FILE)
+
+    def set_method(self, method: str | None = None) -> None:
+        """Manually set methods, either directly from a string or providing the path of a markdown file with the methods."""
         
-        if len(existing_paths) == 0:
-            warnings.warn(
-                "No data files paths were found in the data description. If you want to provide input data, ensure that you indicate their path, otherwise this may cause hallucinations in the LLM in the get_results() workflow later on."
-            )
+        self.research.methodology = self.setter(method, METHOD_FILE)
+
+    def set_results(self, results: str | None = None) -> None:
+        """Manually set the results, either directly from a string or providing the path of a markdown file with the results."""
         
+        self.research.results = self.setter(results, RESULTS_FILE)
+
+    def set_plots(self, plots: list[str] | list[Image.Image]) -> None:
+        """Manually set the plots from their path."""
+
+        for i, plot in enumerate(plots):
+            if isinstance(plot,str):
+                plot_path= Path(plot)
+                img = Image.open(plot_path)
+                plot_name = str(plot_path.name)
+            else:
+                img = plot
+                plot_name = f"plot_{i}.png"
+            
+            img.save( os.path.join(self.project_dir, INPUT_FILES, PLOTS_FOLDER, plot_name) )
+
+    #---
+    # Printers
+    #---
+
+    def printer(self, content: str) -> None:
+        """Method to show the content depending on the execution environment, whether Jupyter notebook or Python script."""
+
+        if self.run_in_notebook:
+            from IPython.display import display, Markdown
+            display(Markdown(content))
+        else:
+            print(content)
+
+    def show_data_description(self) -> None:
+        """Show the data description set by the `set_data_description` method."""
+
+        self.printer(self.research.data_description)
+
+    def show_idea(self) -> None:
+        """Show the provided or generated idea by the `set_idea` or `get_idea` methods."""
+
+        self.printer(self.research.idea)
+
+    def show_method(self) -> None:
+        """Show the provided or generated methods by `set_method` or `get_method`."""
+
+        self.printer(self.research.methodology)
+
+    def show_results(self) -> None:
+        """Show the obtained results."""
+
+        self.printer(self.research.results)
+
+    def show_keywords(self) -> None:
+        """Show the keywords."""
+
+        print(self.research.keywords)
+
+        if isinstance(self.research.keywords, dict):
+            # Handle dict format (AAS keywords with URLs)
+            keyword_list = "\n".join(
+                                [f"- [{keyword}]({self.research.keywords[keyword]})" for keyword in self.research.keywords]
+                            )
+        else:
+            # Handle list format (UNESCO keywords)
+            keyword_list = "\n".join([f"- {keyword}" for keyword in self.research.keywords])
+        
+        self.printer(keyword_list)
+
+    #---
+    # Generative modules
+    #---
+
     def enhance_data_description(self,
                                  summarizer_model: str, 
                                  summarizer_response_formatter_model: str) -> None:
@@ -180,20 +253,6 @@ class Denario:
         self.research.data_description = enhanced_text
             
         print(f"Enhanced text written to: {os.path.join(input_files_dir, DESCRIPTION_FILE)}")
-
-    def printer(self, content: str) -> None:
-        """Method to show the content depending on the execution environment, whether Jupyter notebook or Python script."""
-
-        if self.run_in_notebook:
-            from IPython.display import display, Markdown
-            display(Markdown(content))
-        else:
-            print(content)
-
-    def show_data_description(self) -> None:
-        """Show the data description set by the `set_data_description` method."""
-
-        self.printer(self.research.data_description)
 
     def get_idea(self,
                  mode = "fast",
@@ -329,16 +388,6 @@ class Denario:
         minutes = int(elapsed_time // 60)
         seconds = int(elapsed_time % 60)
         print(f"Idea generated in {minutes} min {seconds} sec.")
-        
-    def set_idea(self, idea: str | None = None) -> None:
-        """Manually set an idea, either directly from a string or providing the path of a markdown file with the idea."""
-
-        self.research.idea = self.setter(idea, IDEA_FILE)
-    
-    def show_idea(self) -> None:
-        """Show the provided or generated idea by the `set_idea` or `get_idea` methods."""
-
-        self.printer(self.research.idea)
 
     def check_idea(self,
                    mode : str = 'semantic_scholar',
@@ -613,16 +662,6 @@ class Denario:
         minutes = int(elapsed_time // 60)
         seconds = int(elapsed_time % 60)
         print(f"Methods generated in {minutes} min {seconds} sec.")  
-        
-    def set_method(self, method: str | None = None) -> None:
-        """Manually set methods, either directly from a string or providing the path of a markdown file with the methods."""
-        
-        self.research.methodology = self.setter(method, METHOD_FILE)
-    
-    def show_method(self) -> None:
-        """Show the provided or generated methods by `set_method` or `get_method`."""
-
-        self.printer(self.research.methodology)
 
     def get_results(self,
                     involved_agents: List[str] = ['engineer', 'researcher'],
@@ -710,30 +749,6 @@ class Denario:
         results_path = os.path.join(self.project_dir, INPUT_FILES, RESULTS_FILE)
         with open(results_path, 'w') as f:
             f.write(self.research.results)
-
-    def set_results(self, results: str | None = None) -> None:
-        """Manually set the results, either directly from a string or providing the path of a markdown file with the results."""
-        
-        self.research.results = self.setter(results, RESULTS_FILE)
-
-    def set_plots(self, plots: list[str] | list[Image.Image]) -> None:
-        """Manually set the plots from their path."""
-
-        for i, plot in enumerate(plots):
-            if isinstance(plot,str):
-                plot_path= Path(plot)
-                img = Image.open(plot_path)
-                plot_name = str(plot_path.name)
-            else:
-                img = plot
-                plot_name = f"plot_{i}.png"
-            
-            img.save( os.path.join(self.project_dir, INPUT_FILES, PLOTS_FOLDER, plot_name) )
-    
-    def show_results(self) -> None:
-        """Show the obtained results."""
-
-        self.printer(self.research.results)
     
     def get_keywords(self, input_text: str, n_keywords: int = 5, kw_type: str = 'unesco') -> None:
         """
@@ -751,22 +766,6 @@ class Denario:
         keywords = cmbagent.get_keywords(input_text, n_keywords = n_keywords, kw_type = kw_type, api_keys = self.keys)
         self.research.keywords = keywords # type: ignore
         print('keywords: ', self.research.keywords)
-    
-    def show_keywords(self) -> None:
-        """Show the keywords."""
-
-        print(self.research.keywords)
-
-        if isinstance(self.research.keywords, dict):
-            # Handle dict format (AAS keywords with URLs)
-            keyword_list = "\n".join(
-                                [f"- [{keyword}]({self.research.keywords[keyword]})" for keyword in self.research.keywords]
-                            )
-        else:
-            # Handle list format (UNESCO keywords)
-            keyword_list = "\n".join([f"- {keyword}" for keyword in self.research.keywords])
-        
-        self.printer(keyword_list)
 
     def get_paper(self,
                   journal: Journal = Journal.NONE,
@@ -832,7 +831,6 @@ class Denario:
         minutes = int(elapsed_time // 60)
         seconds = int(elapsed_time % 60)
         print(f"Paper written in {minutes} min {seconds} sec.")    
-
 
     def referee(self,
                 llm: LLM | str = models["gemini-2.5-flash"],
