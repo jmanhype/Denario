@@ -25,7 +25,7 @@ Denario is a multiagent system designed to be a scientific research assistant. D
 
 ## Last updates
 
-- November 3, 2025 - The Denario paper is out at [arxiv](https://arxiv.org/pdf/2510.26887)!
+- November 3, 2025 - Version 1.0 is released and the Denario paper is out at [arxiv](https://arxiv.org/pdf/2510.26887)!
 
 - October 9, 2025 - A paper fully generated with Denario has been accepted for publication in the [Open Conference of AI Agents for Science 2025](https://openreview.net/forum?id=LENY7OWxmN), the 1st open conference with AI as primary authors.
 
