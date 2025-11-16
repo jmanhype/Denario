@@ -52,6 +52,9 @@ Then, run the gui with:
 denario run
 ```
 
+### credientials 
+**Note:** If you plan to use Gemini models, the app utilizes the `GOOGLE_APPLICATION_CREDENTIALS` environment variable for authentication when accessing Gemini models via Vertex AI. See the [documentation on LLM API keys](https://denario.readthedocs.io/en/latest/llm_api_keys/) for setup instructions.
+
 ## Get started
 
 Initialize a `Denario` instance and describe the data and tools to be employed.
