@@ -233,7 +233,7 @@ If you make use of Denario, please cite the following references:
 
 [GNU GENERAL PUBLIC LICENSE (GPLv3)](https://www.gnu.org/licenses/gpl-3.0.html)
 
-Denario - Copyright (C) 2025 Pablo Villanueva-Domingo, Francisco Villaescusa-Navarro, Boris Bolliet
+Denario - Copyright (C) 2026 Pablo Villanueva-Domingo, Francisco Villaescusa-Navarro, Boris Bolliet
 
 ## Contact and enquiries
 
