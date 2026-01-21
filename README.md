@@ -27,8 +27,6 @@ Denario is a multiagent system designed to be a scientific research assistant. D
 
 - December 7, 2025 - [Cmbagent](https://github.com/CMBAgents/cmbagent), the research analysis backend of Denario, won a **first place award** at the **NeurIPS 2025 [Fair Universe Competition](https://fair-universe.lbl.gov/)**. 
 
-
-
 - November 3, 2025 - Version 1.0 is released and the Denario paper is out at [arxiv](https://arxiv.org/pdf/2510.26887)!
 
 - October 9, 2025 - A paper fully generated with Denario has been accepted for publication in the [Open Conference of AI Agents for Science 2025](https://openreview.net/forum?id=LENY7OWxmN), the 1st open conference with AI as primary authors.
