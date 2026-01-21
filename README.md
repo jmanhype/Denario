@@ -54,6 +54,11 @@ Then, run the gui with:
 denario run
 ```
 
+### Credientials 
+
+See the [documentation on LLM API keys](https://denario.readthedocs.io/en/latest/llm_api_keys/) for setup instructions.
+
+
 ## Get started
 
 Initialize a `Denario` instance and describe the data and tools to be employed.
