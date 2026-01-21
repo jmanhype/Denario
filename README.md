@@ -54,9 +54,9 @@ Then, run the gui with:
 denario run
 ```
 
-### Credientials 
+### Credentials 
 
-See the [documentation on LLM API keys](https://denario.readthedocs.io/en/latest/llm_api_keys/apikeys/) for setup instructions.
+Denario makes use of LLMs from OpenAI, Claude and Gemini. See the [documentation on LLM API keys](https://denario.readthedocs.io/en/latest/llm_api_keys/apikeys/) for setup instructions.
 
 
 ## Get started
