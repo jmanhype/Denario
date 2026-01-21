@@ -56,7 +56,7 @@ denario run
 
 ### Credientials 
 
-See the [documentation on LLM API keys](https://denario.readthedocs.io/en/latest/llm_api_keys/) for setup instructions.
+See the [documentation on LLM API keys](https://denario.readthedocs.io/en/latest/llm_api_keys/apikeys/) for setup instructions.
 
 
 ## Get started
