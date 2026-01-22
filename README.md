@@ -25,6 +25,8 @@ Denario is a multiagent system designed to be a scientific research assistant. D
 
 ## Last updates
 
+- January 20, 2026 - [Denario](https://github.com/AstroPilot-AI/Denario) and [Cmbagent](https://github.com/CMBAgents/cmbagent)featured in the [LSST DESC AI Roadmap](https://arxiv.org/abs/2601.14235). 
+
 - December 7, 2025 - [Cmbagent](https://github.com/CMBAgents/cmbagent), the research analysis backend of Denario, won a **first place award** at the **NeurIPS 2025 [Fair Universe Competition](https://fair-universe.lbl.gov/)**. 
 
 - November 3, 2025 - Version 1.0 is released and the Denario paper is out at [arxiv](https://arxiv.org/pdf/2510.26887)!
