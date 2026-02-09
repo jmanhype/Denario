@@ -5,7 +5,7 @@
 <img src="https://img.shields.io/badge/YouTube-Subscribe-red?style=flat-square&logo=youtube" alt="Subscribe on YouTube" width="140"/>
 </a>
 
-Denario is a multiagent system designed to be a scientific research assistant. Denario implements AI agents with [AG2](https://ag2.ai/) and [LangGraph](https://www.langchain.com/langgraph), using [cmbagent](https://github.com/CMBAgents/cmbagent) as the research analysis backend. Denario and Cmbagent are an Open Source Software project under GPL-3 and Apache 2 licenses respectively. No private or public organizations/individuals other than the three copyright holders can claim IP and/or ownership on these software packages.
+Denario is a multiagent system designed to be a scientific research assistant. Denario implements AI agents with [AG2](https://ag2.ai/) and [LangGraph](https://www.langchain.com/langgraph), using [cmbagent](https://github.com/CMBAgents/cmbagent) as the research analysis backend. Denario and Cmbagent are Open Source Software projects under GPL-3 and Apache 2 licenses respectively. No private or public organizations/individuals other than the three copyright holders can claim IP and/or ownership on these software packages.
 
 ## Resources
 
