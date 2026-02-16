@@ -354,7 +354,7 @@ def plots_node(state: GraphState, config: RunnableConfig):
                 if images_in_text:
                     break
             else:
-                raise RuntimeError("Unable to put the images in the text. Failed after three attemps")
+                print(f"WARNING: Not all images verified in text after 3 attempts, continuing with best effort")
                 
             
             # save temporary file
