@@ -313,12 +313,17 @@ def plots_node(state: GraphState, config: RunnableConfig):
             # do a loop over all images in the batch
             images = {}
             for i, file in enumerate(tqdm(batch_files, desc=f"Processing figures {start+1}-{min(start+batch_size, num_images)}")):
-                image = image_to_base64(file)
-
-                PROMPT = caption_prompt(state, image)
-                state, result = LLM_call(PROMPT, state)
-                caption = extract_latex_block(state, result, "Caption")
-                caption = LaTeX_checker(state, caption)  #make sure is written in LaTeX
+                try:
+                    image = image_to_base64(file)
+                    PROMPT = caption_prompt(state, image)
+                    state, result = LLM_call(PROMPT, state)
+                    caption = extract_latex_block(state, result, "Caption")
+                    caption = LaTeX_checker(state, caption)  #make sure is written in LaTeX
+                except Exception as e:
+                    # Fallback for non-multimodal models (e.g. Zhipu GLM text-only endpoints)
+                    stem = file.stem.replace('_', ' ').replace('-', ' ')
+                    caption = f"Results visualization: {stem}."
+                    print(f"\n  [caption] Multimodal captioning failed ({e.__class__.__name__}), using filename fallback")
                 images[f"image{i}"] = {'name': file.name, 'caption': caption}
 
             # save temporary json file with image name + image caption
