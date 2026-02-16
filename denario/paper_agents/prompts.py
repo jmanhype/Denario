@@ -401,7 +401,14 @@ Respond in this format:
 <Section>
 \end{{Section}}
 
-In <Section>, put the new section with the images and their captions. The location of each image should be "../input_files/plots/image_name". Choose a label for each image given its caption. The width of the images should be half the page. Note that all text in <Section> should be compatible with LaTex. Make sure you do not put extra brackets at the end of the captions. The captions of the figures must be on a single paragraph. Do create enumerates or itemize inside the caption.
+In <Section>, put the new section with the images and their captions. The location of each image should be "../input_files/plots/image_name". Choose a label for each image given its caption. Note that all text in <Section> should be compatible with LaTex. Make sure you do not put extra brackets at the end of the captions. The captions of the figures must be on a single paragraph. Do create enumerates or itemize inside the caption.
+
+IMPORTANT figure formatting rules:
+- Use \\begin{{figure}}[t!] (NOT [h]) so LaTeX places figures at the top of columns, interleaved with text
+- Use width=\\columnwidth (full column width) for single-column figures
+- For wide figures that span both columns, use \\begin{{figure*}}[t!] with width=\\textwidth
+- Place each figure immediately after the paragraph that first references it
+- Distribute figures evenly throughout the section, not clustered together
 """)]
 
 
@@ -508,9 +515,9 @@ You are provided an original text from a scientific paper written in LaTeX. In t
 - For instance, given this figure
 - If references match with its corresponding figure label, do not change it
 
-\\begin{{figure}}[h!]
+\\begin{{figure}}[t!]
     \\centering
-    \\includegraphics[width=0.5\textwidth]{{../{state['files']['Folder']}/plots/A.png}}
+    \\includegraphics[width=\\columnwidth]{{../{state['files']['Folder']}/plots/A.png}}
     \\caption{{Histogram of GroupSFR for two different values of non-Gaussianities. The blue histogram represents $f = 200$ and the red histogram represents $f = -200$. Large differences are seen in the normalized density of GroupSFR for the two different values of $f$.}}
     \\label{{fig:GroupSFR_hist}}
 \\end{{figure}}
