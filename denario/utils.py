@@ -18,13 +18,14 @@ def input_check(str_input: str) -> str:
     return content
 
 def llm_parser(llm: LLM | str) -> LLM:
-    """Get the LLM instance from a string."""
+    """Get the LLM instance from a string. Unknown model names are treated as custom/proxy models."""
 
     if isinstance(llm, str):
-        try:
+        if llm in models:
             llm = models[llm]
-        except KeyError:
-            raise KeyError(f"LLM '{llm}' not available. Please select from: {list(models.keys())}")
+        else:
+            # Allow arbitrary model names for proxy/custom endpoints (Max Router, LiteLLM, Z.AI, etc.)
+            llm = LLM(name=llm, max_output_tokens=16384, temperature=0.5)
     return llm
 
 def extract_file_paths(markdown_text):

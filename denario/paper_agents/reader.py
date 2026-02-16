@@ -19,7 +19,15 @@ def preprocess_node(state: GraphState, config: RunnableConfig):
     """
 
     # set the LLM
-    if 'gemini' in state['llm']['model']:
+    # If a custom base URL is set, route ALL models through OpenAI-compatible endpoint
+    # (the proxy handles model name translation — e.g. Max Router, LiteLLM, Z.AI)
+    if state["keys"].OPENAI_BASE_URL:
+        state['llm']['llm'] = ChatOpenAI(model=state['llm']['model'],
+                                         temperature=state['llm']['temperature'],
+                                         openai_api_key=state["keys"].OPENAI,
+                                         openai_api_base=state["keys"].OPENAI_BASE_URL)
+
+    elif 'gemini' in state['llm']['model']:
         state['llm']['llm'] = ChatGoogleGenerativeAI(model=state['llm']['model'],
                                                 temperature=state['llm']['temperature'],
                                                 google_api_key=state["keys"].GEMINI)
@@ -28,22 +36,17 @@ def preprocess_node(state: GraphState, config: RunnableConfig):
         state['llm']['llm'] = ChatOpenAI(model=state['llm']['model'],
                                          temperature=state['llm']['temperature'],
                                          openai_api_key=state["keys"].OPENAI)
-                    
+
     elif 'claude' in state['llm']['model']  or 'anthropic' in state['llm']['model'] :
         state['llm']['llm'] = ChatAnthropic(model=state['llm']['model'],
                                             temperature=state['llm']['temperature'],
                                             anthropic_api_key=state["keys"].ANTHROPIC)
 
     else:
-        # Fallback: treat as OpenAI-compatible (works with proxies like Max Router, LiteLLM, Z.AI)
-        kwargs = {
-            "model": state['llm']['model'],
-            "temperature": state['llm']['temperature'],
-            "openai_api_key": state["keys"].OPENAI,
-        }
-        if state["keys"].OPENAI_BASE_URL:
-            kwargs["openai_api_base"] = state["keys"].OPENAI_BASE_URL
-        state['llm']['llm'] = ChatOpenAI(**kwargs)
+        # Fallback: treat as OpenAI-compatible for unknown model names
+        state['llm']['llm'] = ChatOpenAI(model=state['llm']['model'],
+                                         temperature=state['llm']['temperature'],
+                                         openai_api_key=state["keys"].OPENAI)
 
     # set the tokens usage
     state['tokens'] = {'ti': 0, 'to': 0, 'i': 0, 'o': 0}
