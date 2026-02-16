@@ -19,33 +19,40 @@ def preprocess_node(state: GraphState, config: RunnableConfig):
     """
 
     # set the LLM
+    max_tokens = state['llm'].get('max_output_tokens', 16384)
+
     # If a custom base URL is set, route ALL models through OpenAI-compatible endpoint
     # (the proxy handles model name translation — e.g. Max Router, LiteLLM, Z.AI)
     if state["keys"].OPENAI_BASE_URL:
         state['llm']['llm'] = ChatOpenAI(model=state['llm']['model'],
                                          temperature=state['llm']['temperature'],
+                                         max_tokens=max_tokens,
                                          openai_api_key=state["keys"].OPENAI,
                                          openai_api_base=state["keys"].OPENAI_BASE_URL)
 
     elif 'gemini' in state['llm']['model']:
         state['llm']['llm'] = ChatGoogleGenerativeAI(model=state['llm']['model'],
                                                 temperature=state['llm']['temperature'],
+                                                max_output_tokens=max_tokens,
                                                 google_api_key=state["keys"].GEMINI)
 
     elif any(key in state['llm']['model'] for key in ['gpt', 'o3']):
         state['llm']['llm'] = ChatOpenAI(model=state['llm']['model'],
                                          temperature=state['llm']['temperature'],
+                                         max_tokens=max_tokens,
                                          openai_api_key=state["keys"].OPENAI)
 
     elif 'claude' in state['llm']['model']  or 'anthropic' in state['llm']['model'] :
         state['llm']['llm'] = ChatAnthropic(model=state['llm']['model'],
                                             temperature=state['llm']['temperature'],
+                                            max_tokens=max_tokens,
                                             anthropic_api_key=state["keys"].ANTHROPIC)
 
     else:
         # Fallback: treat as OpenAI-compatible for unknown model names
         state['llm']['llm'] = ChatOpenAI(model=state['llm']['model'],
                                          temperature=state['llm']['temperature'],
+                                         max_tokens=max_tokens,
                                          openai_api_key=state["keys"].OPENAI)
 
     # set the tokens usage

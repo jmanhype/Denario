@@ -213,6 +213,19 @@ def extract_latex_block(state: GraphState, text: str, block: str) -> str:
     if match:
         return match.group(1).strip()
 
+    # Try raw content fallback — strip common LaTeX wrappers and use entire response
+    # This handles truncated responses where \end{Block} was cut off
+    raw = text.strip()
+    if raw and len(raw) > 200:
+        for wrapper in [r"\documentclass", r"\begin{document}", r"\end{document}"]:
+            raw = raw.replace(wrapper, "")
+        # If the content starts with \subsection or contains LaTeX commands, it's likely valid
+        if re.search(r"\\(?:subsection|textbf|begin\{|label|ref|cite)", raw):
+            # Strip any leading \begin{Block} without matching \end{Block}
+            raw = re.sub(rf"\\begin{{{block}}}", "", raw, flags=re.IGNORECASE).strip()
+            print(f"\n  [extract_latex_block] Using raw content fallback for {block} ({len(raw)} chars)")
+            return raw
+
     # Write to Error file, attempt fixer with retries
     with open(state['files']['Error'], 'w', encoding='utf-8') as f:
         f.write(text)
@@ -232,11 +245,12 @@ def fixer(state: GraphState, section_name, max_attempts=3):
 
     path = Path(state['files']['Error'])
     with path.open("r", encoding="utf-8") as f:
-        Text = f.read()
+        original_text = f.read()
 
     result = ""
     for attempt in range(max_attempts):
-        PROMPT = fixer_prompt(Text, section_name)
+        # Always use the ORIGINAL text for fixer prompt, not previous attempt output
+        PROMPT = fixer_prompt(original_text, section_name)
         state, result = LLM_call(PROMPT, state)
 
         pattern = rf"\\begin{{{section_name}}}(.*?)\\end{{{section_name}}}"
@@ -249,6 +263,15 @@ def fixer(state: GraphState, section_name, max_attempts=3):
         match = re.search(section_pattern, result, re.DOTALL | re.IGNORECASE)
         if match:
             return match.group(1).strip()
+
+        # Raw content fallback on last attempt — if the fixer produced LaTeX, use it
+        if attempt == max_attempts - 1 and result and len(result.strip()) > 200:
+            raw = result.strip()
+            raw = re.sub(rf"\\begin{{{section_name}}}", "", raw, flags=re.IGNORECASE)
+            raw = re.sub(rf"\\end{{{section_name}}}", "", raw, flags=re.IGNORECASE)
+            if re.search(r"\\(?:subsection|textbf|begin\{|label|ref|cite)", raw):
+                print(f"\n  [fixer] Using raw content fallback for {section_name}")
+                return raw.strip()
 
     # All attempts failed — save error output but DON'T sys.exit()
     with open(state['files']['Error'], 'w', encoding='utf-8') as f:
