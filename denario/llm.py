@@ -9,6 +9,8 @@ class LLM(BaseModel):
     """Maximum output tokens allowed."""
     temperature: float | None
     """Temperature of the model."""
+    base_url: str | None = None
+    """Optional proxy/base URL for OpenAI-compatible endpoints."""
 
 gemini20flash = LLM(name="gemini-2.0-flash",
                     max_output_tokens=8192,

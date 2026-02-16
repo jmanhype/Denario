@@ -33,7 +33,18 @@ def preprocess_node(state: GraphState, config: RunnableConfig):
         state['llm']['llm'] = ChatAnthropic(model=state['llm']['model'],
                                             temperature=state['llm']['temperature'],
                                             anthropic_api_key=state["keys"].ANTHROPIC)
-    
+
+    else:
+        # Fallback: treat as OpenAI-compatible (works with proxies like Max Router, LiteLLM, Z.AI)
+        kwargs = {
+            "model": state['llm']['model'],
+            "temperature": state['llm']['temperature'],
+            "openai_api_key": state["keys"].OPENAI,
+        }
+        if state["keys"].OPENAI_BASE_URL:
+            kwargs["openai_api_base"] = state["keys"].OPENAI_BASE_URL
+        state['llm']['llm'] = ChatOpenAI(**kwargs)
+
     # set the tokens usage
     state['tokens'] = {'ti': 0, 'to': 0, 'i': 0, 'o': 0}
 

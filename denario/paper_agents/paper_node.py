@@ -176,54 +176,61 @@ def section_node(state: GraphState, config: RunnableConfig, section_name: str,
       reflection_fn: whether to use self-reflections to improve the text
     """
 
-    # temporary file with the selected keywords
-    print(f'Writing {section_name}'.ljust(33, '.'), end="", flush=True)
-    f_temp = Path(f"{state['files']['Temp']}/{section_name}.tex")
+    try:
+        # temporary file with the selected keywords
+        print(f'Writing {section_name}'.ljust(33, '.'), end="", flush=True)
+        f_temp = Path(f"{state['files']['Temp']}/{section_name}.tex")
 
-    # check if abstract already exists
-    if f_temp.exists():
-        state['paper'][section_name] = temp_file(state, f_temp, 'read')
-        print(f'Found on {section_name}.tex', end="", flush=True)
+        # check if abstract already exists
+        if f_temp.exists():
+            state['paper'][section_name] = temp_file(state, f_temp, 'read')
+            print(f'Found on {section_name}.tex', end="", flush=True)
 
-    else:
+        else:
 
-        # Try for three times
-        for attempt in range(3):
+            # Try for three times
+            for attempt in range(3):
 
-            print(f'{attempt} ', end="",flush=True)
-            
-            # --- Step 1: Prompt and parse section ---
-            PROMPT = prompt_fn(state)
-            state, result = LLM_call(PROMPT, state)
-            section_text = extract_latex_block(state, result, section_name)
-            state['paper'][section_name] = section_text
-            
-            # --- Step 2: Optional self-reflection ---
-            if reflection_fn:
-                for _ in range(2):
-                    PROMPT = reflection_fn(state)
-                    state, section_text = LLM_call(PROMPT, state)
+                print(f'{attempt} ', end="",flush=True)
 
-            # --- Step 3: Check LaTeX ---
-            section_text = LaTeX_checker(state, section_text)
+                # --- Step 1: Prompt and parse section ---
+                PROMPT = prompt_fn(state)
+                state, result = LLM_call(PROMPT, state)
+                section_text = extract_latex_block(state, result, section_name)
+                state['paper'][section_name] = section_text
 
-            # --- Step 4: Remove unwanted LaTeX wrappers ---
-            state['paper'][section_name] = clean_section(section_text, section_name)
+                # --- Step 2: Optional self-reflection ---
+                if reflection_fn:
+                    for _ in range(2):
+                        PROMPT = reflection_fn(state)
+                        state, section_text = LLM_call(PROMPT, state)
 
-            # --- Step 5: save file to file ---
-            temp_file(state, f_temp, 'write', state['paper'][section_name])
+                # --- Step 3: Check LaTeX ---
+                section_text = LaTeX_checker(state, section_text)
 
-            # --- Step 6: Compile and try to fix LaTeX errors ---
-            if compile_tex_document(state, f_temp, state['files']['Temp']): #returns True if compiled properly
-                break
-            else:
-                state['latex']['section_to_fix'] = f"{section_name}"
-                state, fixed = fix_latex(state, f_temp)
-                if fixed: #if fixed=True it means it fixed the error and compiled properly
+                # --- Step 4: Remove unwanted LaTeX wrappers ---
+                state['paper'][section_name] = clean_section(section_text, section_name)
+
+                # --- Step 5: save file to file ---
+                temp_file(state, f_temp, 'write', state['paper'][section_name])
+
+                # --- Step 6: Compile and try to fix LaTeX errors ---
+                if compile_tex_document(state, f_temp, state['files']['Temp']): #returns True if compiled properly
                     break
-        
-    # Save paper
-    save_paper(state, state['files']['Paper_v1'])
+                else:
+                    state['latex']['section_to_fix'] = f"{section_name}"
+                    state, fixed = fix_latex(state, f_temp)
+                    if fixed: #if fixed=True it means it fixed the error and compiled properly
+                        break
+
+        # Save paper
+        save_paper(state, state['files']['Paper_v1'])
+
+    except (ValueError, RuntimeError) as e:
+        print(f" | FAILED: {e}")
+        # Store a placeholder so later sections can still generate
+        state['paper'][section_name] = f"% Section {section_name} failed to generate: {e}\n"
+        save_paper(state, state['files']['Paper_v1'])
 
     # print some information
     minutes, seconds = divmod(time.time()-state['time']['start'], 60)
@@ -231,7 +238,7 @@ def section_node(state: GraphState, config: RunnableConfig, section_name: str,
     print(f"{state['tokens']['ti']} {state['tokens']['to']} [{int(minutes)}m {int(seconds)}s]")
 
     # return updated state
-    return {"paper": {**state["paper"], section_name: state['paper'][section_name]},
+    return {"paper": {**state["paper"], section_name: state['paper'].get(section_name, '')},
             'tokens': state['tokens']}
 
 

@@ -1,5 +1,4 @@
 import re
-import sys
 import json
 import json5
 from pathlib import Path
@@ -108,7 +107,10 @@ def temp_file(state, fin, action, text=None, json_file=False):
 \usepackage{{amsmath}}
 \usepackage{{multirow}}
 \usepackage{{natbib}}
-\usepackage{{graphicx}} 
+\usepackage{{graphicx}}
+\usepackage{{booktabs}}
+\usepackage{{float}}
+\usepackage{{caption}}
 {journaldict.usepackage}
 
 \begin{{document}}
@@ -192,21 +194,29 @@ def extract_latex_block(state: GraphState, text: str, block: str) -> str:
 
     # Check if the input 'text' is a list and convert it to a string
     if isinstance(text, list):
-        # Join the list items into a single string
-        # Use str(item) to ensure all list elements can be joined
         text = "".join([str(item) for item in text])
 
+    # Try exact match first
     pattern = rf"\\begin{{{block}}}(.*?)\\end{{{block}}}"
     match = re.search(pattern, text, re.DOTALL)
-
     if match:
         return match.group(1).strip()
-    
-    # in case it fails
+
+    # Try case-insensitive match
+    match = re.search(pattern, text, re.DOTALL | re.IGNORECASE)
+    if match:
+        return match.group(1).strip()
+
+    # Try without delimiters — look for section content between \section{Block} and next \section
+    section_pattern = rf"\\section\*?{{{block}}}(.*?)(?=\\section|\\end{{document}}|$)"
+    match = re.search(section_pattern, text, re.DOTALL | re.IGNORECASE)
+    if match:
+        return match.group(1).strip()
+
+    # Write to Error file, attempt fixer with retries
     with open(state['files']['Error'], 'w', encoding='utf-8') as f:
         f.write(text)
 
-    # try to fix it using fixed
     try:
         return fixer(state, block)
     except ValueError:
@@ -214,29 +224,37 @@ def extract_latex_block(state: GraphState, text: str, block: str) -> str:
 
     
 
-def fixer(state: GraphState, section_name):
+def fixer(state: GraphState, section_name, max_attempts=3):
     """
-    This function will try to fix the errors with automatic parsing
+    This function will try to fix the errors with automatic parsing.
+    Retries up to max_attempts times. Raises ValueError on failure instead of sys.exit().
     """
 
     path = Path(state['files']['Error'])
     with path.open("r", encoding="utf-8") as f:
         Text = f.read()
-    
-    PROMPT = fixer_prompt(Text, section_name)
-    state, result = LLM_call(PROMPT, state)
-    #result = llm.invoke(PROMPT).content
-    
-    # Extract caption
-    pattern = rf"\\begin{{{section_name}}}(.*?)\\end{{{section_name}}}"
-    match = re.search(pattern, result, re.DOTALL)
-    if match:
-        return match.group(1).strip()
-    else:
-        with open(state['files']['Error'], 'w', encoding='utf-8') as f:
-            f.write(result)
-        print("Fixer failed to extract block")
-        sys.exit()
+
+    result = ""
+    for attempt in range(max_attempts):
+        PROMPT = fixer_prompt(Text, section_name)
+        state, result = LLM_call(PROMPT, state)
+
+        pattern = rf"\\begin{{{section_name}}}(.*?)\\end{{{section_name}}}"
+        match = re.search(pattern, result, re.DOTALL | re.IGNORECASE)
+        if match:
+            return match.group(1).strip()
+
+        # Try section pattern fallback
+        section_pattern = rf"\\section\*?{{{section_name}}}(.*?)(?=\\section|$)"
+        match = re.search(section_pattern, result, re.DOTALL | re.IGNORECASE)
+        if match:
+            return match.group(1).strip()
+
+    # All attempts failed — save error output but DON'T sys.exit()
+    with open(state['files']['Error'], 'w', encoding='utf-8') as f:
+        f.write(result)
+    print(f"Fixer failed to extract {section_name} after {max_attempts} attempts")
+    raise ValueError(f"Fixer failed for {section_name}")
 
 
 

@@ -643,3 +643,85 @@ AAS keywords list:
 
 In <Keywords>, place the selected keywords separated by a comma
 """)], keywords
+
+
+def figure_planning_prompt(state):
+    return [HumanMessage(content=f"""You are a scientific figure designer. Based on the paper idea, methods, and results below, plan what figures would best illustrate the findings.
+
+For each figure, provide:
+- A descriptive prompt suitable for an AI image generator (focused on scientific diagram style, NOT photorealistic)
+- A short filename (no extension, no spaces — use underscores)
+- The figure type (e.g., "schematic", "diagram", "conceptual", "workflow")
+
+Only suggest figures that would ADD value beyond standard data plots (which are handled separately). Focus on:
+- Architecture/workflow diagrams
+- Conceptual illustrations of the method
+- Schematic overviews
+
+Do NOT suggest:
+- Bar charts, line plots, scatter plots (these are generated from data)
+- Photographs or photorealistic images
+
+Idea:
+{state['idea'].get('Idea', 'N/A')}
+
+Methods:
+{state['idea'].get('Methods', 'N/A')}
+
+Results:
+{state['idea'].get('Results', 'N/A')}
+
+Respond in this format:
+
+```json
+{{
+  "figures": [
+    {{
+      "prompt": "Scientific diagram showing ...",
+      "filename": "method_overview",
+      "type": "schematic"
+    }}
+  ]
+}}
+```
+
+Suggest 1-3 figures maximum. If the paper doesn't need AI-generated figures, return an empty list.
+""")]
+
+
+def matplotlib_code_prompt(state):
+    return [HumanMessage(content=f"""You are a data visualization expert. Based on the paper results below, write a self-contained Python script using matplotlib that generates publication-quality statistical figures.
+
+The script should:
+1. Import matplotlib, numpy, and any needed libraries
+2. Use the variable `output_dir` (already defined as a string path) to save figures
+3. Save each figure as a separate PNG file in `output_dir`
+4. Use a clean scientific style (seaborn-v0_8-whitegrid or similar)
+5. Include proper axis labels, titles, and legends
+6. Use `plt.tight_layout()` and `plt.savefig(os.path.join(output_dir, 'filename.png'), dpi=150, bbox_inches='tight')`
+
+Paper idea:
+{state['idea'].get('Idea', 'N/A')}
+
+Methods:
+{state['idea'].get('Methods', 'N/A')}
+
+Results:
+{state['idea'].get('Results', 'N/A')}
+
+Generate figures that visualize the key findings described in the results. If the results contain numerical data, create appropriate charts. If not, create illustrative example figures that match the described patterns.
+
+Respond with the Python code inside a code block:
+
+```python
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+import numpy as np
+import os
+
+# ... your code here ...
+```
+
+Generate 1-4 figures maximum.
+""")]

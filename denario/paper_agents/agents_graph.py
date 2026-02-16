@@ -3,6 +3,7 @@ from langgraph.checkpoint.memory import MemorySaver
 
 from .parameters import GraphState
 from .paper_node import abstract_node, citations_node, conclusions_node, introduction_node, keywords_node, methods_node, plots_node, refine_results, results_node
+from .figure_gen import generate_figures_node
 from .reader import preprocess_node
 from .routers import citation_router
 
@@ -21,9 +22,10 @@ def build_graph(mermaid_diagram=False):
     builder.add_node("introduction_node", introduction_node)
     builder.add_node("methods_node",      methods_node)
     builder.add_node("results_node",      results_node)
-    builder.add_node("conclusions_node",  conclusions_node)
-    builder.add_node("plots_node",        plots_node)
-    builder.add_node("refine_results",    refine_results)
+    builder.add_node("conclusions_node",        conclusions_node)
+    builder.add_node("generate_figures_node",  generate_figures_node)
+    builder.add_node("plots_node",              plots_node)
+    builder.add_node("refine_results",          refine_results)
     builder.add_node("keywords_node",     keywords_node)
     builder.add_node("citations_node",    citations_node)
     
@@ -35,7 +37,8 @@ def build_graph(mermaid_diagram=False):
     builder.add_edge("introduction_node",           "methods_node")
     builder.add_edge("methods_node",                "results_node")
     builder.add_edge("results_node",                "conclusions_node")
-    builder.add_edge("conclusions_node",            "plots_node")
+    builder.add_edge("conclusions_node",            "generate_figures_node")
+    builder.add_edge("generate_figures_node",      "plots_node")
     builder.add_edge("plots_node",                  "refine_results")
     builder.add_conditional_edges("refine_results", citation_router)
     builder.add_edge("citations_node",              END)
