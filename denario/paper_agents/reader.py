@@ -122,6 +122,13 @@ def preprocess_node(state: GraphState, config: RunnableConfig):
         if os.path.exists(f_in):
             os.remove(f"{f_in}")
 
+    # Clean figure-insertion cache files so they regenerate if Results content changed
+    import glob
+    temp_dir = f"{state['files']['Paper_folder']}/temp"
+    for pattern in ['Results_*.tex', 'Results_refined.tex']:
+        for f_in in glob.glob(f"{temp_dir}/{pattern}"):
+            os.remove(f_in)
+
     # create a folder to save LaTeX progress
     os.makedirs(state['files']['Temp'], exist_ok=True)
 
